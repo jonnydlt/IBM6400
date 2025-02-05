@@ -1,0 +1,136 @@
+---
+title: "M01-2-Introduction to Literate Programming-Application Assignment"
+author: "Jonny De La Torre"
+date: '`r format(Sys.time(), "%Y-%m-%d")`'
+format: 
+  html: 
+    toc: true
+    toc-depth: 4
+    number-sections: true
+    code-line-numbers: true
+    code-fold: false
+    code-link: true
+    embed-resources: true
+editor: visual
+execute: 
+  freeze: auto
+  warning: false
+---
+
+# Introduction
+
+Literate programming combines code and documentation in a structured manner to improve readability and reproducibility. This assignment applies these principles to basic R programming exercises.
+
+## Exercise 1: Create a Variable
+
+```{r}
+X <- "This is my first assignment"
+```
+
+## Exercise 2: Adding Texts in Base R
+
+### (1) Learning `paste()` Function
+
+```{r}
+# Example usage of paste() and paste0()
+paste("Hello", "World")
+paste0("Hello", "World")
+```
+
+### (2) Using `paste()` to Append Text
+
+```{r}
+X <- paste(X, "and I'm loving it!")
+X
+```
+
+## Exercise 3: Create and Modify a Vector
+
+```{r}
+Y <- c(2, 3, 4, 5)  # Creating the vector
+Y <- Y * 2  # Multiplying by 2
+```
+
+## Exercise 4: Print Variables
+
+```{r}
+X  # Print variable X
+Y  # Print vector Y
+```
+
+## Exercise 5: Find Max and Min of Y
+
+```{r}
+max(Y)  # Maximum value
+min(Y)  # Minimum value
+```
+
+## Exercise 6: Load ggplot2 and View Data
+
+```{r}
+# Load ggplot2
+library(ggplot2)
+
+# View first six rows of economics dataset
+head(economics)
+```
+
+## Exercise 7: Understanding and Plotting Data
+
+### Definitions of Variables
+
+-   **date**: The date of the observation.
+-   **pce**: Personal consumption expenditures (in billions of dollars).
+-   **pop**: Population in thousands.
+-   **psavert**: Personal savings rate.
+-   **uempmed**: Median duration of unemployment (in weeks).
+-   **unemploy**: Total number of unemployed persons (in thousands).
+
+### Scatter Plot of Two Related Variables
+
+```{r}
+plot <- ggplot(economics, aes(x = unemploy, y = uempmed)) +
+  geom_point()
+
+plot + 
+  labs(title = "Unemployment vs. Median Duration",
+       x = "Number of Unemployed Persons",
+       y = "Median Duration of Unemployment (weeks)")
+```
+
+## Exercise 8: Replicating Plot with Pipe Operator
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+economics %>%
+  ggplot(aes(x = unemploy, y = uempmed)) +
+  geom_point() +
+  labs(title = "Unemployment vs. Median Duration",
+       x = "Number of Unemployed Persons",
+       y = "Median Duration of Unemployment (weeks)")
+```
+
+## Exercise 9: Findings
+
+::: callout-note
+The scatter plot (Figure 1) demonstrates a positive correlation between the number of unemployed persons and the median duration of unemployment. As unemployment rises, people tend to remain unemployed for longer periods.
+:::
+
+## Exercise 10: Summary of Implemented Tools
+
+1.  **Section numbering** using `#`, `##`, and `###`.
+2.  **Bold font** via `**bold text**`.
+3.  **Italicized font** via `*italicized text*`.
+4.  **Callout-tip** for hints.
+5.  **Callout-note** for findings.
+6.  **Blockquotes** for explanations.
+7.  **Tick marks** (\`\`\`) to highlight functions.
+8.  **Cross-referencing** figures.
+9.  **Piping (`%>%`)** for streamlined code.
+10. **Formatted HTML output** with a table of contents and numbered sections.
+
+# Conclusion
+
+This assignment demonstrated the principles of literate programming using Quarto Markdown. By structuring code and explanations clearly, the document is both functional and readable for future reference.
