@@ -1,0 +1,288 @@
+---
+title: "M05-Visualizing Data with Tables for MSDM CEP"
+author: Jonny De La Torre
+date: '`r format(Sys.time())`'
+format: 
+  html: 
+    toc: true
+    number-sections: true
+    code-link: true
+    embed-resources: true
+editor: visual
+execute: 
+  freeze: auto
+---
+
+## **1. Setup and Preparation**
+
+```{r}
+# Load necessary libraries 
+library(tidyverse) 
+library(gtExtras)
+library(ggthemes) 
+library(readr) 
+library(ggrepel) # Labels for data 
+library(scales) # Scaling functions 
+library(plotly) # Interactive charts 
+library(GGally) # Correlation plots 
+library(corrplot) 
+library(glue) # Combining multiple components 
+library(quarto)
+```
+
+## **2. A Glimpse into the Data**
+
+```{r}
+# Load the Red Wine Quality dataset
+red_wine <- read.csv("https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv", sep = ";")
+
+# View structure of dataset
+glimpse(red_wine)
+
+```
+
+## **3. Display Raw Data in a Table**
+
+```{r}
+# Show first 10 rows in a formatted table
+red_wine |> 
+  head(10) |> 
+  gt() |> 
+  tab_header(
+    title = md("The `Red Wine Quality` Dataset"),
+    subtitle = md("**Physicochemical properties and quality ratings of red wine samples**")
+  ) |> 
+  opt_align_table_header(align = "left")
+```
+
+## **4. Summary Statistics Table**
+
+### **Using `summarise(across())` for Summary Metrics**
+
+```{r}
+# Group by wine quality and calculate summary statistics
+wine_summary <- red_wine |> 
+  group_by(quality) |> 
+  summarise(
+    mean_alcohol = round(mean(alcohol), 2),
+    mean_acidity = round(mean(fixed.acidity), 2),
+    mean_sulphates = round(mean(sulphates), 2),
+    mean_ph = round(mean(pH), 2),
+    mean_density = round(mean(density), 5),
+    .groups = "drop"
+  )
+
+# Create a GT table with formatted output
+wine_summary |> 
+  gt() |> 
+  tab_header(
+    title = md("**Red Wine Quality Summary**"),
+    subtitle = md("**Average values of key properties grouped by wine quality score**")
+  ) |> 
+  fmt_number(columns = where(is.numeric), decimals = 2) |> 
+  opt_align_table_header(align = "left")
+```
+
+## **5. Data Wrangling and Visualization**
+
+### **(a) Red Wine Summary with Distribution Plots**
+
+```{r}
+# Compute summary statistics for visualization
+wine_dist_summary <- red_wine |> 
+  group_by(quality) |> 
+  summarise(
+    median_alcohol = round(median(alcohol), 2),
+    mean_alcohol = round(mean(alcohol), 2),
+    median_acidity = round(median(fixed.acidity), 2),
+    mean_acidity = round(mean(fixed.acidity), 2),
+    alcohol_data = list(alcohol),  # Store raw Alcohol data
+    acidity_data = list(fixed.acidity),  # Store raw Acidity data
+    .groups = "drop"
+  )
+
+# Generate the gt table with distribution plots
+wine_dist_summary |> 
+  gt() |> 
+  gt_plt_dist(column = alcohol_data,
+              type = "histogram",
+              line_color = "blue",
+              fill_color = "lightblue",
+              bw = 0.5) |>  # Histogram for Alcohol
+  gt_plt_dist(column = acidity_data,
+              type = "histogram",
+              line_color = "red",
+              fill_color = "pink",
+              bw = 0.5) |>  # Histogram for Acidity
+  fmt_number(columns = median_alcohol:mean_acidity, decimals = 2) |>  # Format numbers
+  tab_header(title = md("**Red Wine Quality Summary with Distribution Plots**"))
+```
+
+## **6. Explanation of Wine Quality Levels**
+
+```{r}
+# Define Wine Quality Explanation Table
+wine_quality_table <- tibble(
+  Quality_Score = c(3, 4, 5, 6, 7, 8),  # Scores from dataset
+  Description = c(
+    "Poor Quality",
+    "Below Average",
+    "Average Quality",
+    "Good Quality",
+    "Very Good",
+    "Excellent Quality"
+  ),
+  Alcohol_Range = c("Low", "Low", "Medium", "Medium", "High", "Very High"),
+  Acidity_Range = c("Very High", "High", "Medium", "Medium", "Low", "Very Low"),
+  Sulphates_Level = c("Very Low", "Low", "Medium", "Medium", "High", "Very High"),
+  Taste_Profile = c(
+    "Sour, Unbalanced, High Acidity",
+    "Slightly Tart, Needs Improvement",
+    "Balanced, Slightly Fruity",
+    "Smooth, Well-Rounded",
+    "Rich Flavor, Well-Balanced",
+    "Complex, Excellent Aroma"
+  )
+)
+
+# Generate the gt table with styling
+wine_quality_table |> 
+  gt() |> 
+  tab_header(
+    title = md("**Wine Quality Explanation**"),
+    subtitle = md("_Understanding Red Wine Quality Levels_")
+  ) |> 
+  cols_label(
+    Quality_Score = "Quality Score",
+    Description = "Quality Description",
+    Alcohol_Range = "Alcohol Strength",
+    Acidity_Range = "Acidity Level",
+    Sulphates_Level = "Sulphates Presence",
+    Taste_Profile = "Taste Profile"
+  ) |> 
+  opt_align_table_header(align = "center") |>  
+  data_color(
+    columns = Quality_Score,
+    colors = scales::col_numeric(
+      palette = c("red", "orange", "yellow", "lightgreen", "green", "darkgreen"),
+      domain = c(3, 8)
+    )
+  ) |> 
+  tab_options(
+    table.font.size = "medium",
+    heading.title.font.size = "large",
+    heading.subtitle.font.size = "small",
+    table.width = pct(100)
+  )
+```
+
+## **7. GPA Equivalent: Wine Quality Distribution**
+
+```{r}
+# Summarize GPA-like statistics for wine quality
+wine_gpa_summary <- red_wine |> 
+  group_by(quality) |> 
+  summarise(
+    median_quality = round(median(quality), 2),
+    mean_quality = round(mean(quality), 2),
+    quality_data = list(quality),  # Store raw Quality values for visualization
+    .groups = "drop"
+  )
+
+# Generate the table with distribution plots
+wine_gpa_summary |> 
+  gt() |> 
+  gt_plt_dist(column = quality_data) |>  # Visualize Wine Quality distribution
+  gt_theme_excel() |>  # Apply Excel-like theme
+  tab_header(title = "Wine Quality Score Distribution")
+```
+
+## **8. What I Learned**
+
+```{r}
+### 1. Key Takeaways from Using gt and gtExtras
+
+# Create a tibble for key takeaways
+key_takeaways <- tibble(
+  Feature = c("Structured and Customizable Tables",
+              "Visual Enhancements with gtExtras",
+              "Color and Conditional Formatting",
+              "Export and Presentation Flexibility"),
+  Description = c("Allows professional table formatting, including headers, footnotes, and precision controls.",
+                  "Supports embedded visualizations like histograms, sparklines, and bar charts.",
+                  "Highlights values dynamically using color coding to improve readability.",
+                  "Tables can be saved as PNG, PDF, or HTML for flexible reporting.")
+)
+
+# Generate a formatted gt table
+key_takeaways |> 
+  gt() |> 
+  tab_header(title = md("**Key Takeaways from `gt` and `gtExtras`**")) |> 
+  cols_label(Feature = "Feature", Description = "Description") |> 
+  opt_align_table_header(align = "left")
+```
+
+```{r}
+### 2. What I Like About gt and gtExtras
+
+# Create a tibble for liked features
+liked_features <- tibble(
+  Feature = c("User-Friendly Design",
+              "Enhanced Visual Appeal",
+              "Interactive & Embedded Visuals",
+              "Professional Reporting Capabilities"),
+  Benefits = c("Easy to learn and apply for both beginners and advanced users.",
+               "Pre-built themes like `gt_theme_excel()` enhance readability.",
+               "gt_plt_dist() enables inline visualizations for tables.",
+               "Themes, color formatting, and footnotes make it useful for reports.")
+)
+
+# Generate the table
+liked_features |> 
+  gt() |> 
+  tab_header(title = md("**What I Liked About `gt` and `gtExtras`**")) |> 
+  cols_label(Feature = "Feature", Benefits = "Benefits") |> 
+  opt_align_table_header(align = "left")
+```
+
+```{r}
+### 3. How Tables Complement Charts in Data Visualization
+
+# Create a tibble for comparison
+tables_vs_charts <- tibble(
+  Aspect = c("Tables", "Charts", "Hybrid Approach"),
+  Strengths = c("Provide exact numerical details for comparisons.",
+                "Show high-level patterns and trends visually.",
+                "Combine numbers and visuals to improve data storytelling.")
+)
+
+# Generate a gt table
+tables_vs_charts |> 
+  gt() |> 
+  tab_header(title = md("**How Tables Complement Charts**")) |> 
+  cols_label(Aspect = "Aspect", Strengths = "Strengths") |> 
+  opt_align_table_header(align = "left")
+```
+
+```{r}
+###4. When to Use Tables Over Charts
+
+# Create a tibble for usage scenarios
+when_tables_are_better <- tibble(
+  Use_Case = c("Exact Data Representation", 
+               "Small Datasets",
+               "Categorical Comparisons",
+               "Reference Materials"),
+  Explanation = c("When numerical accuracy is critical (e.g., financial reports).",
+                  "When a chart would overcomplicate simple comparisons.",
+                  "When comparing distinct groups, such as wine quality categories.",
+                  "When users need to retrieve specific numbers, such as in research reports.")
+)
+
+# Generate a gt table
+when_tables_are_better |> 
+  gt() |> 
+  tab_header(title = md("**When to Use Tables Instead of Charts**")) |> 
+  cols_label(Use_Case = "Use Case", Explanation = "Explanation") |> 
+  opt_align_table_header(align = "left")
+```
